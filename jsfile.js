@@ -1,34 +1,98 @@
-console.log("x");
 var canvas = document.getElementById('myCanvas'),
-    c     = canvas.getContext('2d'),
-    n     =100, //number of segments
-    
-    x,y,
-    percentX, percentY, // between 0 and 1
-    mathX, mathY,
-    // MATH "WINDOW"
-    xmin=-10,
-    xmax=10,
-    ymin=-10,
-    ymax=10;
+  c = canvas.getContext('2d'),
+  n = 20, // number of line segments
 
-// Draw a blue line.
+  // define the math "window"
+  xMin = -10,
+  xMax = 10,
+  yMin = -10,
+  yMax = 10,
+
+  time = 0,
+  timeIncrement = 0.05,
+
+  math = mathjs(),
+  expr = 'sin(x*15+t)*x',
+  scope = {
+    x: 0,
+    t: 0
+  },
+  tree = math.parse(expr, scope);
+
+// ==== main program ====
 drawCurve();
+initTextField();
+startAnimation();
 
-function drawCurve(){
+
+// ============ function definitions ============== //
+function drawCurve() {
+  var i, xPixel, yPixel, // used in for loop
+    percentX, percentY, // vary between 0 and 1
+    mathX, mathY; // our math coordinates
+
+  // clear canvas before each redraw
+  c.clearRect(0, 0, canvas.width, canvas.height);
+  
+  // draw border
+  c.strokeRect(0, 0, canvas.width, canvas.height);
+
+  // draw curve
   c.beginPath();
-  for(var i = 0; i < n; i++) {
-    percentX=i/(n-1);
-    
-    mathX=percentX * (xmax-xmin)+xmin;
-    mathY=Math.sin(mathX);  
-    
-    percentY=(mathY - ymin)/(ymax-ymin);
-    
-    x=percentX * canvas.width;
-    y=percentY * canvas.height;
-    c.lineTo(x, y);
-  } 
-  c.stroke();
-}  
+  for (i = 0; i < n; i += 1) {
+    percentX = i / (n - 1);
+    mathX = percentX * (xMax - xMin) + xMin;
 
+    mathY = evaluateMathExpr(mathX);
+
+    percentY = (mathY - yMin) / (yMax - yMin);
+
+    // flip y coordinates
+    percentY = 1 - percentY;
+
+    xPixel = percentX * canvas.width;
+    yPixel = percentY * canvas.height;
+    c.lineTo(xPixel, yPixel);
+  }
+  c.stroke();
+}
+
+function evaluateMathExpr(mathX) {
+  scope.x = mathX;
+  scope.t = time;
+  return tree.eval();
+}
+
+function initTextField() {
+
+  var input = $('#inputField');
+
+  // set initial text value programmatically using jQuery
+  input.val(expr);
+
+  // listen for changes using jQuery
+  input.keyup(function(event) {
+    expr = input.val();
+    tree = math.parse(expr, scope);
+    drawCurve();
+  });
+
+}
+
+function startAnimation() {
+
+  (function animLoop() {
+    // requestAnimationFrame takes a function: recursion!
+    // schedules the param function to be called whenever the screen refreshes
+    requestAnimationFrame(animLoop);
+    render();
+  }());
+}
+
+function render() {
+  // increment time
+  time += timeIncrement;
+
+  // redraw plot
+  drawCurve();
+}
