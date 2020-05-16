@@ -11,7 +11,7 @@ var canvas = document.getElementById('myCanvas'),
   time = 0,
   timeIncrement = 0.05,
 
-  math = mathjs(),
+  math = math(),
   expr = 'sin(x*15+t)*x',
   scope = {
     x: 0,
